@@ -1,40 +1,34 @@
 package jh.github.com.itemservice;
 
-import jh.github.com.InventoryApplication;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.math.BigDecimal;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-
-@ContextConfiguration(classes = InventoryApplication.class)
-@WebMvcTest(ItemController.class)
+@SpringBootTest
 class ItemManagerApplicationTests {
 
 	@Autowired
-	private MockMvc mvc;
+	private ItemController controller;
 
 	@Test
-	@DisplayName("Should contain four elements")
-	public void testItemArrSize() throws Exception {
-		mvc.perform(MockMvcRequestBuilders
-						.get("/items")
-						.accept(MediaType.APPLICATION_JSON))
-				.andExpect(MockMvcResultMatchers.jsonPath("$.items").exists())
-				.andExpect(MockMvcResultMatchers.jsonPath("$.items[*].id").isNotEmpty());
+	void contextLoads() {
+		assertThat(controller).isNotNull();
 	}
 
+	@Test
+	public void itemArrSize() {
+		controller.createItem(new Item(null, "A", "B", "C", new BigDecimal(1)));
+		List<Item> items = controller.getAllItems();
+
+		assertThat(items).hasSize(4);
+	}
 }
