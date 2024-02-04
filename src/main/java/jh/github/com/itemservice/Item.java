@@ -1,40 +1,34 @@
 package jh.github.com.itemservice;
 
 import jakarta.persistence.*;
+import jh.github.com.IdentifiableEntity;
 import jh.github.com.inventoryservice.Inventory;
 
 import java.math.BigDecimal;
 
 @Entity
-@Table(name="ITEM")
-public class Item {
+@Table(name="items")
+public class Item implements IdentifiableEntity {
 
 	@Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id")
     private Long id;
-
-    @Column(nullable = false, name = "name")
     private String name;
-    @Column(name = "description")
     private String description;
-    @Column(name = "image_url")
     private String imageUrl;
-    @Column(name = "value")
-    private BigDecimal value;
+    private BigDecimal worth;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "item_id")
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Inventory inventory;
 
     public Item() {}
 
-    public Item(Inventory inventory, String name, String description, String imageUrl, BigDecimal value) {
+    public Item(Inventory inventory, String name, String description, String imageUrl, BigDecimal worth) {
         this.inventory = inventory;
         this.name = name;
         this.description = description;
         this.imageUrl = imageUrl;
-        this.value = value;
+        this.worth = worth;
     }
 
     public Inventory getInventory() {
@@ -45,10 +39,12 @@ public class Item {
         this.inventory = inventory;
     }
 
+    @Override
     public Long getId() {
         return id;
     }
 
+    @Override
     public void setId(Long id) {
         this.id = id;
     }
@@ -77,11 +73,23 @@ public class Item {
         this.imageUrl = imageUrl;
     }
 
-    public BigDecimal getValue() {
-        return value;
+    public BigDecimal getWorth() {
+        return worth;
     }
 
-    public void setValue(BigDecimal value) {
-        this.value = value;
+    public void setWorth(BigDecimal worth) {
+        this.worth = worth;
+    }
+
+    @Override
+    public String getRel() {
+        return "items";
+    }
+
+    public void set(Item newItem) {
+        this.name = newItem.getName();
+        this.description = newItem.getDescription();
+        this.imageUrl = newItem.getImageUrl();
+        this.worth = newItem.getWorth();
     }
 }

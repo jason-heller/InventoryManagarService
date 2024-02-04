@@ -1,5 +1,6 @@
 package jh.github.com.inventoryservice;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jh.github.com.itemservice.Item;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -12,34 +13,26 @@ import java.util.Date;
 import java.util.List;
 
 @Entity
-@Table(name="INVENTORY")
+@Table(name="inventories")
 public class Inventory implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "inventory_id")
     private Long id;
-
-    @Column(nullable = false, name = "owner_name")
     private String ownerName;
-
-    @Column(name = "last_interaction")
     private Date lastInteraction;
+    private BigDecimal totalWorth = new BigDecimal(0);
 
-    @Column(name = "total_worth")
-    private BigDecimal totalWorth;
+    @JsonIgnore
+    //@ElementCollection
+    @OneToMany
+    private List<Item> items = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "inventory", cascade = CascadeType.ALL)
-    private List<Item> items;
-
-    public Inventory() {
-    }
+    public Inventory() {}
 
     public Inventory(String ownerName) {
         this.ownerName = ownerName;
 
         this.lastInteraction = new Date();
-        this.totalWorth = new BigDecimal(0);
-        this.items = new ArrayList<>();
     }
 
     public Long getId() {
@@ -83,7 +76,7 @@ public class Inventory implements Serializable {
         this.totalWorth = new BigDecimal(0);
 
         for(Item item : items)
-            this.totalWorth = this.totalWorth.add(item.getValue());
+            this.totalWorth = this.totalWorth.add(item.getWorth());
     }
 
     public List<Item> getItems() {

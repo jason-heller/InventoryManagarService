@@ -1,76 +1,82 @@
 package jh.github.com.inventoryservice;
 
+import jh.github.com.dao.Dao;
 import jh.github.com.itemservice.Item;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping(path="/inv", produces={"application/json"})
+@RequestMapping(path="/inv")
 public class InventoryController {
 
     @Autowired
-    private final InventoryRepository repository;
+    private Dao<Inventory> inventoryDao;
 
-    public InventoryController(InventoryRepository repository) {
-        this.repository = repository;
+    @PostMapping()
+    public ResponseEntity<Inventory> createInventory(Inventory inventory) {
+        Inventory savedInventory = inventoryDao.save(inventory);
+        return ResponseEntity.created(URI.create("/inv/" + savedInventory.getId())).body(savedInventory);
     }
 
-    @PostMapping("/inv")
-    public Inventory createInventory(Inventory inventory) {
-        return repository.save(inventory);
+    @GetMapping("/{id}")
+    public ResponseEntity<Inventory> getInventoryById(@PathVariable Long id) {
+        Optional<Inventory> inventory = inventoryDao.getById(id);
+
+        return inventory.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/inv/{id}")
-    public Inventory getInventory(@PathVariable Long id) {
-        Optional<Inventory> inventory = repository.findById(id);
-
-        return inventory.orElse(null);
+    @GetMapping()
+    public List<Inventory> getAllInventories() {
+        return inventoryDao.getAll();
     }
 
-    @GetMapping("/inv")
-    public Iterable<Inventory> getAllInventories() {
-        return repository.findAll();
-    }
-
-    @PutMapping("/inv/{id}")
-    public Inventory addToInventory(@PathVariable Long id, Item item) {
-        Optional<Inventory> optInventory = repository.findById(id);
+    @PutMapping("/add/{id}")
+    public ResponseEntity<Inventory> addToInventory(@PathVariable Long id, Item item) {
+        Optional<Inventory> optInventory = inventoryDao.getById(id);
 
         if (optInventory.isEmpty())
-            return null;
+            return ResponseEntity.notFound().build();
 
         Inventory inventory = optInventory.get();
         List<Item> items = inventory.getItems();
 
         items.add(item);
-        return repository.save(inventory);
+        inventoryDao.save(inventory);
+        return ResponseEntity.ok(inventory);
     }
 
-    @PutMapping("/inv/{id}")
-    public Inventory removeFromInventory(@PathVariable Long id, Item item) {
-        Optional<Inventory> optInventory = repository.findById(id);
+    @PutMapping("/remove/{id}")
+    public ResponseEntity<Inventory> removeFromInventory(@PathVariable Long id, Item item) {
+        Optional<Inventory> optInventory = inventoryDao.getById(id);
 
         if (optInventory.isEmpty())
-            return null;
+            return ResponseEntity.notFound().eTag("inventory").build();
 
         Inventory inventory = optInventory.get();
         List<Item> items = inventory.getItems();
 
         if (!items.remove(item))
-            return null;
+            return ResponseEntity.notFound().eTag("item").build();
 
-        return repository.save(inventory);
+        inventoryDao.save(inventory);
+        return ResponseEntity.ok(inventory);
     }
 
 
-    @DeleteMapping("/inv/{id}")
-    public void removeInventory(@PathVariable Long id) {
-        if (repository.existsById(id)) {
-            repository.deleteById(id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Inventory> removeInventory(@PathVariable Long id) {
+        Optional<Inventory> inventory = inventoryDao.getById(id);
+
+        if (inventory.isPresent()) {
+            inventoryDao.delete(inventory.get());
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
         }
     }
 }
